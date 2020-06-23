@@ -270,7 +270,7 @@ def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):
     FloatTensor = torch.cuda.FloatTensor if pred_boxes.is_cuda else torch.FloatTensor
 
     nB = pred_boxes.size(0)
-    nA = pred_boxes.size(1)
+    nA = pred_boxes.size(1) # anchor num
     nC = pred_cls.size(-1)
     nG = pred_boxes.size(2)
 
