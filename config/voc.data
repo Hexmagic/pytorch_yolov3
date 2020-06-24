@@ -1,0 +1,6 @@
+classes= 20
+train=VOC2008/train.txt
+valid=VOC2008/val.txt
+names=data/voc.names
+backup=backup/
+eval=coco

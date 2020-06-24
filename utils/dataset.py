@@ -4,12 +4,15 @@ import torch
 from torch.nn import functional as F
 from torch.utils.data import Dataset
 from torchvision.transforms import ColorJitter, Compose, ToPILImage, ToTensor
-
+import random
 
 class VOCDataset(Dataset):
     def __init__(self, root, mode="train", img_size=416):
         self.mode = mode
         self.img_size = img_size
+        self.min_size = self.img_size - 3 * 32
+        self.max_size = self.img_size + 3 * 32
+        self.batch_count = 0
         if self.mode == "train":
             self.transform = Compose(
                 [ToPILImage(), ColorJitter(0.2, 0.2, 0.2), ToTensor()]
@@ -53,6 +56,9 @@ class VOCDataset(Dataset):
         targets = [boxes for boxes in targets if boxes is not None]
         for i, boxes in enumerate(targets):
             boxes[:, 0] = i
+        if self.batch_count % 10 == 0:
+            self.img_size = random.choice(range(self.min_size, self.max_size + 1, 32))
+        self.batch_count += 1
         targets = torch.cat(targets, 0)
         imgs = torch.stack([self.resize(img, self.img_size) for img in imgs])
         return imgs, targets
