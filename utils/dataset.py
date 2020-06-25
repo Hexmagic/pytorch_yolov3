@@ -7,7 +7,7 @@ from torchvision.transforms import ColorJitter, Compose, ToPILImage, ToTensor
 import random
 
 class VOCDataset(Dataset):
-    def __init__(self, root, mode="train", img_size=416):
+    def __init__(self, root, mode="train", img_size=608):
         self.mode = mode
         self.img_size = img_size
         self.min_size = self.img_size - 3 * 32
