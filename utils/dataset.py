@@ -94,7 +94,7 @@ class VOCDataset(Dataset):
 
             targets = torch.zeros((len(boxes), 6))
             targets[:, 1:] = torch.FloatTensor(boxes)
-            if np.random().random() < 0.5:
+            if np.random.random() < 0.5:
                 img, targets = horisontal_flip(img, targets)
             return image, targets
 
