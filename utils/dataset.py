@@ -66,7 +66,6 @@ class VOCDataset(Dataset):
     def __getitem__(self, index):
         row = self.lines[index].strip()
         image = cv2.imread(row)
-        label = self.labels[row]
         img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         img = self.transform(image)
         boxes = self.labels[row]
@@ -96,7 +95,7 @@ class VOCDataset(Dataset):
             targets[:, 1:] = torch.FloatTensor(boxes)
             if np.random.random() < 0.5:
                 img, targets = horisontal_flip(img, targets)
-            return image, targets
+            return img, targets
 
     def collate_fn(self, batch):
         imgs, targets = list(zip(*batch))
