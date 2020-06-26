@@ -76,7 +76,7 @@ class VOCDataset(Dataset):
             _, h, w = img.shape
             h_factor, w_factor = (h, w)
             img, pad = pad_to_square(img, 0)
-            _, padded_n, padded_w = img.shape
+            _, padded_h, padded_w = img.shape
             x1 = w_factor * (boxes[:, 1] - boxes[:, 3] / 2)
             y1 = h_factor * (boxes[:, 2] - boxes[:, 4] / 2)
             x2 = w_factor * (boxes[:, 1] + boxes[:, 3] / 2)
