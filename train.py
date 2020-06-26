@@ -147,13 +147,13 @@ if __name__ == "__main__":
             targets = Variable(targets.to(device), requires_grad=False)
 
             loss, outputs = model(imgs, targets)
-            optimizer.zero_grad()
+            # optimizer.zero_grad()
             loss.backward()
-            optimizer.step()
-            # if batches_done % opt.gradient_accumulations:
-            #     # Accumulates gradient before each step
-            #     optimizer.step()
-            #     optimizer.zero_grad()
+            # optimizer.step()
+            if batches_done % opt.gradient_accumulations:
+                # Accumulates gradient before each step
+                optimizer.step()
+                optimizer.zero_grad()
 
             # ----------------
             #   Log progress
