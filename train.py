@@ -118,7 +118,7 @@ if __name__ == "__main__":
         collate_fn=dataset.collate_fn,
     )
 
-    optimizer = torch.optim.Adam(model.parameters())
+    optimizer = torch.optim.SGD(model.parameters(),lr=5e-3,momentum=0.9,nesterov=True)
 
     metrics = [
         "grid_size",
