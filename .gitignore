@@ -14,4 +14,4 @@ weights/*.weights
 __pycache__
 checkpoints
 *.json
-VOC2008
+VOC2012
