@@ -141,13 +141,9 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
             lr_scheduler.step()
-
-            log_str = "\n---- [Epoch %d/%d, Batch %d/%d] ----\n" % (
-                epoch,
-                opt.epochs,
-                batch_i,
-                len(dataloader),
-            )
+            mem = torch.cuda.max_memory_allocated() / 1024.0 / 1024.0
+            log_str = "\n---- [Epoch %d/%d, Batch %d/%d Mem:%d M] ----\n" % (
+                epoch, opt.epochs, batch_i, len(dataloader), mem)
 
             metric_table = [[
                 "Metrics",
