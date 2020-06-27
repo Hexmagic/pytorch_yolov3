@@ -10,7 +10,11 @@ import torch.utils.data
 from PIL import Image
 from torch.nn import functional as F
 from torch.utils.data import Dataset
-from torchvision.transforms import ColorJitter, Compose, ToPILImage, ToTensor
+from torchvision.transforms import Compose, ToTensor
+
+from .transforms import (ConvertFromInts, Expand, PhotometricDistort,
+                         RandomMirror, RandomSampleCrop, Resize, SubtractMeans,
+                         ToPercentCoords)
 
 
 def horisontal_flip(images, targets):
@@ -32,8 +36,6 @@ def pad_to_square(img, pad_value):
     return img, pad
 
 
-
-
 class VOCDataset(torch.utils.data.Dataset):
     class_names = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
                    'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
@@ -44,12 +46,32 @@ class VOCDataset(torch.utils.data.Dataset):
                  data_dir,
                  split='train',
                  transform=None,
+                 img_size=416,
                  keep_difficult=False):
         """Dataset for VOC data.
-        Args:
-            data_dir: the root of the VOC2007 or VOC2012 dataset, the directory contains the following sub-directories:
-                Annotations, ImageSets, JPEGImages, SegmentationClass, SegmentationObject.
-        """
+		Args:
+			data_dir: the root of the VOC2007 or VOC2012 dataset, the directory contains the following sub-directories:
+				Annotations, ImageSets, JPEGImages, SegmentationClass, SegmentationObject.
+		"""
+        if split == 'train':
+            transform = [
+                ConvertFromInts(),
+                PhotometricDistort(),
+                Expand([123, 117, 104]),
+                RandomSampleCrop(),
+                RandomMirror(),
+                ToPercentCoords(),
+                Resize(img_size),
+                SubtractMeans([123, 117, 104]),
+                ToTensor(),
+            ]
+        else:
+            transform = [
+                Resize(img_size),
+                SubtractMeans([123, 117, 104]),
+                ToTensor()
+            ]
+        self.transform = Compose(transform)
         self.data_dir = data_dir
         self.split = split
         self.transform = transform
@@ -84,6 +106,15 @@ class VOCDataset(torch.utils.data.Dataset):
             boxes=boxes,
             labels=labels,
         )
+        target = torch.zeros(len(boxes), 6)
+        for i, (box, label) in enumerate(zip(boxes, labels)):
+            target[i, 0] = 0
+            target[i, 1] = label
+            target[i, 2] = box[0]
+            target[i, 3] = box[1]
+            target[i, 4] = box[2]
+            target[i, 5] = box[3]
+        target = torch.Tensor(target)
         return image, targets, index
 
     def get_annotation(self, index):
@@ -156,75 +187,6 @@ class VOCDataset(torch.utils.data.Dataset):
         imgs = torch.stack([self.resize(img, self.img_size) for img in imgs])
         return imgs, targets
 
-
-class VOCDataset(Dataset):
-    def __init__(self, root, mode="train", img_size=608, rtn_path=False):
-        self.mode = mode
-        self.rtn_path = rtn_path
-
-        self.img_size = img_size
-        self.min_size = self.img_size - 3 * 32
-        self.max_size = self.img_size + 3 * 32
-        self.batch_count = 0
-        if self.mode == "train":
-            self.transform = Compose(
-                [ToPILImage(),
-                 ColorJitter(0.2, 0.2, 0.2),
-                 ToTensor()])
-        else:
-            self.transform = ToTensor()
-        self.labels = {}
-        with open(f"{root}/{mode}.txt", "r") as f:
-            lines = f.readlines()
-            self.lines = []
-            for line in lines:
-                row = line.strip()
-                label_path = row.replace("JPEGImages",
-                                         "labels").replace(".jpg", ".txt")
-                data = np.loadtxt(label_path).reshape(-1, 5)
-                if data.size == 0:
-                    continue
-                self.labels[row] = data
-                self.lines.append(row)
-
-    def resize(self, img, size):
-        image = F.interpolate(img.unsqueeze(0), size=size,
-                              mode="nearest").squeeze(0)
-        return image
-
-    def __len__(self):
-        return len(self.lines)
-
-    def __getitem__(self, index):
-        row = self.lines[index].strip()
-        image = cv2.imread(row)
-        img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        img = self.transform(image)
-        boxes = self.labels[row]
-        if self.rtn_path:
-            return row, img
-        else:
-            _, h, w = img.shape
-            h_factor, w_factor = (h, w)
-            img, pad = pad_to_square(img, 0)
-            _, padded_h, padded_w = img.shape
-            x1 = w_factor * (boxes[:, 1] - boxes[:, 3] / 2)
-            y1 = h_factor * (boxes[:, 2] - boxes[:, 4] / 2)
-            x2 = w_factor * (boxes[:, 1] + boxes[:, 3] / 2)
-            y2 = h_factor * (boxes[:, 2] + boxes[:, 4] / 2)
-            # Adjust for added padding
-            x1 += pad[0]
-            y1 += pad[2]
-            x2 += pad[1]
-            y2 += pad[3]
-            # Returns (x, y, w, h)
-            boxes[:, 1] = ((x1 + x2) / 2) / padded_w
-            boxes[:, 2] = ((y1 + y2) / 2) / padded_h
-            boxes[:, 3] *= w_factor / padded_w
-            boxes[:, 4] *= h_factor / padded_h
-
-            targets = torch.zeros((len(boxes), 6))
-            targets[:, 1:] = torch.FloatTensor(boxes)
-            if np.random.random() < 0.5:
-                img, targets = horisontal_flip(img, targets)
-            return img, targets
+if __name__=='__main__':
+    from torch.utils.data import DataLoader
+    load = DataLoader(VOCDataset(data_dir='',split='train'))
