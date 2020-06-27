@@ -133,13 +133,14 @@ class VOCDataset(torch.utils.data.Dataset):
     def _read_image_ids(image_sets_files):
         ids = []
         for filename in image_sets_files:
+            sep = '\\' if '\\' in filename else '/'
             with open(filename) as f:
-                lst = filename.split('\\')
+                lst = filename.split(sep)
                 lst = lst[:-1]
                 lst[2] = 'Annotations'
                 for line in f:
                     lst[3] = f'{line.strip()}.xml'
-                    ids.append('\\'.join(lst))
+                    ids.append(sep.join(lst))
         return ids
 
     def _get_annotation(self, image_id):
