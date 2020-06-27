@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import types
 from numpy import random
+from torch.nn import functional as F
 
 
 def intersect(box_a, box_b):
@@ -304,8 +305,8 @@ class RandomSampleCrop(object):
                     continue
 
                 # cut the crop from the image
-                current_image = current_image[rect[1]:rect[3],
-                                              rect[0]:rect[2], :]
+                current_image = current_image[rect[1]:rect[3], rect[0]:
+                                              rect[2], :]
 
                 # keep overlap with gt box IF center in sampled patch
                 centers = (boxes[:, :2] + boxes[:, 2:]) / 2.0

@@ -10,11 +10,10 @@ import torch.utils.data
 from PIL import Image
 from torch.nn import functional as F
 from torch.utils.data import Dataset
-from torchvision.transforms import Compose, ToTensor
 
-from .transforms import (ConvertFromInts, Expand, PhotometricDistort,
-                         RandomMirror, RandomSampleCrop, Resize, SubtractMeans,
-                         ToPercentCoords)
+from data.transforms import (ConvertFromInts, Expand, PhotometricDistort,
+                             RandomMirror, RandomSampleCrop, Resize,
+                             SubtractMeans, ToPercentCoords, ToTensor, Compose)
 
 
 def horisontal_flip(images, targets):
@@ -61,7 +60,7 @@ class VOCDataset(torch.utils.data.Dataset):
                 RandomSampleCrop(),
                 RandomMirror(),
                 ToPercentCoords(),
-                Resize(img_size),
+                #Resize(img_size),
                 SubtractMeans([123, 117, 104]),
                 ToTensor(),
             ]
@@ -74,10 +73,18 @@ class VOCDataset(torch.utils.data.Dataset):
         self.transform = Compose(transform)
         self.data_dir = data_dir
         self.split = split
-        self.transform = transform
-        image_sets_file = os.path.join(self.data_dir, "ImageSets", "Main",
-                                       "%s.txt" % self.split)
-        self.ids = VOCDataset._read_image_ids(image_sets_file)
+        if split != 'test':
+            image_sets_file = [
+                os.path.join(self.data_dir, f'VOC{year}', "ImageSets", "Main",
+                             "%s.txt" % self.split) for year in [2007, 2012]
+            ]
+            self.ids = VOCDataset._read_image_ids(image_sets_file)
+        else:
+            image_sets_file = [
+                os.path.join(self.data_dir, f'VOC{year}', "ImageSets", "Main",
+                             "%s.txt" % self.split) for year in [2007]
+            ]
+            self.ids = VOCDataset._read_image_ids(image_sets_file)
         self.keep_difficult = keep_difficult
         self.batch_count = 0
         self.img_size = 416
@@ -102,20 +109,18 @@ class VOCDataset(torch.utils.data.Dataset):
         image = self._read_image(image_id)
         if self.transform:
             image, boxes, labels = self.transform(image, boxes, labels)
-        targets = dict(
-            boxes=boxes,
-            labels=labels,
-        )
-        target = torch.zeros(len(boxes), 6)
+        target = np.zeros((len(boxes), 6))
         for i, (box, label) in enumerate(zip(boxes, labels)):
             target[i, 0] = 0
-            target[i, 1] = label
-            target[i, 2] = box[0]
-            target[i, 3] = box[1]
-            target[i, 4] = box[2]
-            target[i, 5] = box[3]
-        target = torch.Tensor(target)
-        return image, targets, index
+            target[i, 1] = label / 1.
+            w = box[2] - box[0]
+            h = box[3] - box[1]
+            target[i, 2] = (box[0] + box[2]) / 2
+            target[i, 3] = (box[1] + box[3]) / 2
+            target[i, 4] = w
+            target[i, 5] = h
+        target = torch.from_numpy(target)
+        return image, target
 
     def get_annotation(self, index):
         image_id = self.ids[index]
@@ -125,16 +130,20 @@ class VOCDataset(torch.utils.data.Dataset):
         return len(self.ids)
 
     @staticmethod
-    def _read_image_ids(image_sets_file):
+    def _read_image_ids(image_sets_files):
         ids = []
-        with open(image_sets_file) as f:
-            for line in f:
-                ids.append(line.rstrip())
+        for filename in image_sets_files:
+            with open(filename) as f:
+                lst = filename.split('\\')
+                lst = lst[:-1]
+                lst[2] = 'Annotations'
+                for line in f:
+                    lst[3] = f'{line.strip()}.xml'
+                    ids.append('\\'.join(lst))
         return ids
 
     def _get_annotation(self, image_id):
-        annotation_file = os.path.join(self.data_dir, "Annotations",
-                                       "%s.xml" % image_id)
+        annotation_file = image_id
         objects = ET.parse(annotation_file).findall("object")
         boxes = []
         labels = []
@@ -168,8 +177,10 @@ class VOCDataset(torch.utils.data.Dataset):
         return {"height": im_info[0], "width": im_info[1]}
 
     def _read_image(self, image_id):
-        image_file = os.path.join(self.data_dir, "JPEGImages",
-                                  "%s.jpg" % image_id)
+        lst = image_id.split('\\')
+        lst[2] = 'JPEGImages'
+        lst[3] = lst[3].replace('.xml', '.jpg')
+        image_file = '\\'.join(lst)
         image = Image.open(image_file).convert("RGB")
         image = np.array(image)
         return image
@@ -187,6 +198,18 @@ class VOCDataset(torch.utils.data.Dataset):
         imgs = torch.stack([self.resize(img, self.img_size) for img in imgs])
         return imgs, targets
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
     from torch.utils.data import DataLoader
-    load = DataLoader(VOCDataset(data_dir='',split='train'))
+    dataset = VOCDataset(data_dir='datasets', split='train')
+    load = DataLoader(dataset,
+                      batch_size=2,
+                      collate_fn=dataset.collate_fn,
+                      shuffle=True)
+    i = 0
+    for ele in load:
+        i += 1
+        if i > 100:
+            break
+        print(ele[0].shape)
+        print(ele[1].shape)
