@@ -45,7 +45,7 @@ def make_optimizer(model, lr=None):
 def make_lr_scheduler(optimizer, milestones=None):
     return WarmupMultiStepLR(
         optimizer=optimizer,
-        milestones=[8000, 10000] if milestones is None else milestones,
+        milestones=[35000, 42000] if milestones is None else milestones,
         gamma=0.3,
         warmup_factor=1.0 / 3,
         warmup_iters=500)
