@@ -52,7 +52,7 @@ class VOCDataset(torch.utils.data.Dataset):
 			data_dir: the root of the VOC2007 or VOC2012 dataset, the directory contains the following sub-directories:
 				Annotations, ImageSets, JPEGImages, SegmentationClass, SegmentationObject.
 		"""
-        self.sep = '\\' if self.platform == 'win32' else '/'
+        self.sep = '\\' if platform == 'win32' else '/'
         if split == 'train':
             transform = [
                 ConvertFromInts(),
