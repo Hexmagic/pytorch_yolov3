@@ -10,7 +10,7 @@ import torch.utils.data
 from PIL import Image
 from torch.nn import functional as F
 from torch.utils.data import Dataset
-
+from sys import platform
 from data.transforms import (ConvertFromInts, Expand, PhotometricDistort,
                              RandomMirror, RandomSampleCrop, Resize,
                              SubtractMeans, ToPercentCoords, ToTensor, Compose)
@@ -52,6 +52,7 @@ class VOCDataset(torch.utils.data.Dataset):
 			data_dir: the root of the VOC2007 or VOC2012 dataset, the directory contains the following sub-directories:
 				Annotations, ImageSets, JPEGImages, SegmentationClass, SegmentationObject.
 		"""
+        self.sep = '\\' if self.platform == 'win32' else '/'
         if split == 'train':
             transform = [
                 ConvertFromInts(),
@@ -133,14 +134,13 @@ class VOCDataset(torch.utils.data.Dataset):
     def _read_image_ids(image_sets_files):
         ids = []
         for filename in image_sets_files:
-            sep = '\\' if '\\' in filename else '/'
             with open(filename) as f:
-                lst = filename.split(sep)
+                lst = filename.split(self.sep)
                 lst = lst[:-1]
                 lst[2] = 'Annotations'
                 for line in f:
                     lst[3] = f'{line.strip()}.xml'
-                    ids.append(sep.join(lst))
+                    ids.append(self.sep.join(lst))
         return ids
 
     def _get_annotation(self, image_id):
@@ -178,10 +178,10 @@ class VOCDataset(torch.utils.data.Dataset):
         return {"height": im_info[0], "width": im_info[1]}
 
     def _read_image(self, image_id):
-        lst = image_id.split('\\')
+        lst = image_id.split(self.sep)
         lst[2] = 'JPEGImages'
         lst[3] = lst[3].replace('.xml', '.jpg')
-        image_file = '\\'.join(lst)
+        image_file = self.sep.join(lst)
         image = Image.open(image_file).convert("RGB")
         image = np.array(image)
         return image
