@@ -142,10 +142,8 @@ if __name__ == "__main__":
         optimizer.step()
         lr_scheduler.step()
 
-        log_str = "\n---- [Iter %d/%d] ----\n" % (
-            iter_i,
-            opt.iter,
-        )
+        log_str = "\n---- [Iter %d/%d MeM:%d]  ----\n" % (
+            iter_i, opt.iter, torch.cuda.max_memory_allocated() / 1024 / 1024)
 
         metric_table = [[
             "Metrics",
