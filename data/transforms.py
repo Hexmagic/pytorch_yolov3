@@ -230,7 +230,7 @@ class ToCV2Image(object):
 class ToTensor(object):
     def __call__(self, cvimage, boxes=None, labels=None):
         return torch.from_numpy(cvimage.astype(np.float32)).permute(
-            2, 0, 1), boxes, labels
+            2, 0, 1) / 255., boxes, labels
 
 
 class RandomSampleCrop(object):

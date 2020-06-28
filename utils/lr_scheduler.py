@@ -39,13 +39,16 @@ class WarmupMultiStepLR(_LRScheduler):
 
 def make_optimizer(model, lr=None):
     lr = 1e-3 if lr is None else lr
-    return torch.optim.Adam(model.parameters(), lr=lr)
+    return torch.optim.SGD(model.parameters(),
+                           lr=lr,
+                           momentum=0.9,
+                           weight_decay=5e-4)
 
 
 def make_lr_scheduler(optimizer, milestones=None):
     return WarmupMultiStepLR(
         optimizer=optimizer,
-        milestones=[8000, 10000] if milestones is None else milestones,
+        milestones=[80000, 100000] if milestones is None else milestones,
         gamma=0.3,
         warmup_factor=1.0 / 3,
         warmup_iters=500)

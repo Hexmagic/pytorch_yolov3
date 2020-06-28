@@ -60,7 +60,7 @@ class VOCDataset(torch.utils.data.Dataset):
                 RandomSampleCrop(),
                 RandomMirror(),
                 ToPercentCoords(),
-                #Resize(img_size),
+                Resize(img_size),
                 SubtractMeans([123, 117, 104]),
                 ToTensor(),
             ]
