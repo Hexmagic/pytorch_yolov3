@@ -45,6 +45,7 @@ if __name__ == "__main__":
         type=str,
         help="if specified starts from checkpoint model",
     )
+    parser.add_argument('--start_iter', type=int, default=0)
     parser.add_argument("--save_folder",
                         type=str,
                         help="save folder",
@@ -119,7 +120,7 @@ if __name__ == "__main__":
         "conf_noobj",
     ]
     model.train()
-    for iter_i in range(1, opt.iter):
+    for iter_i in range(opt.start_iter, opt.iter):
         try:
             imgs, targets = next(dataloader)
         except:
