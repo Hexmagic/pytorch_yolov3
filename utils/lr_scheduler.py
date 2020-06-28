@@ -37,7 +37,7 @@ class WarmupMultiStepLR(_LRScheduler):
         ]
 
 
-def make_optimizer(model, lr=None):
+Xdef make_optimizer(model, lr=None):
     lr = 1e-3 if lr is None else lr
     return torch.optim.SGD(model.parameters(),
                            lr=lr,
