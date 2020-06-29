@@ -47,13 +47,14 @@ class VOCDataset(torch.utils.data.Dataset):
                  split='train',
                  transform=None,
                  img_size=416,
+                 rtn_path=False,
                  keep_difficult=False):
         """Dataset for VOC data.
 		Args:
 			data_dir: the root of the VOC2007 or VOC2012 dataset, the directory contains the following sub-directories:
 				Annotations, ImageSets, JPEGImages, SegmentationClass, SegmentationObject.
 		"""
-
+        self.rtn_path = rtn_path
         if split == 'train':
             transform = [
                 ConvertFromInts(),
@@ -123,9 +124,7 @@ class VOCDataset(torch.utils.data.Dataset):
             target[i, 4] = w
             target[i, 5] = h
         target = torch.from_numpy(target)
-        if self.split == 'train':
-            return image, target
-        if self.split =='test':
+        if self.rtn_path:
             return image_id, image
         return image, target
 

@@ -23,17 +23,13 @@ from matplotlib.ticker import NullLocator
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image_folder",
-                        type=str,
-                        default="data/samples",
-                        help="path to dataset")
     parser.add_argument("--model_def",
                         type=str,
                         default="config/yolov3.cfg",
                         help="path to model definition file")
     parser.add_argument("--weights_path",
                         type=str,
-                        default="weights/yolov3_ckpt_118000.pth",
+                        default="weights/yolov3_ckpt_100.pth",
                         help="path to weights file")
     parser.add_argument("--class_path",
                         type=str,
@@ -45,7 +41,7 @@ if __name__ == "__main__":
                         help="object confidence threshold")
     parser.add_argument("--nms_thres",
                         type=float,
-                        default=0.4,
+                        default=0.5,
                         help="iou thresshold for non-maximum suppression")
     parser.add_argument("--batch_size",
                         type=int,
@@ -83,10 +79,13 @@ if __name__ == "__main__":
     model.eval()  # Set in evaluation mode
 
     dataloader = DataLoader(
-        VOCDataset('datasets', split='val', img_size=opt.img_size),
+        VOCDataset('datasets',
+                   split='val',
+                   img_size=opt.img_size,
+                   rtn_path=True),
         batch_size=opt.batch_size,
         num_workers=opt.n_cpu,
-        shuffle=True,
+        shuffle=False,
     )
 
     classes = VOCDataset.class_names
@@ -104,7 +103,7 @@ if __name__ == "__main__":
         # Configure input
         i += 1
         input_imgs = Variable(input_imgs.type(Tensor))
-        if i > 200:
+        if i > 100:
             break
         # Get detections
         with torch.no_grad():
@@ -130,10 +129,15 @@ if __name__ == "__main__":
     # Iterate through images and save plot of detections
     for img_i, (path, detections) in enumerate(zip(imgs, img_detections)):
 
-        print("(%d) Image: '%s'" % (img_i, path))
+        print("(%d) Image: '%s'" %
+              (img_i, path.replace('Annotations', 'JPEGImages').replace(
+                  '.xml', '.jpg')))
 
         # Create plot
-        img = np.array(Image.open(path.replace('Annotations','JPEGImages').replace('.xml','.jpg')))
+        img = np.array(
+            Image.open(
+                path.replace('Annotations',
+                             'JPEGImages').replace('.xml', '.jpg')))
         plt.figure()
         fig, ax = plt.subplots(1)
         ax.imshow(img)
