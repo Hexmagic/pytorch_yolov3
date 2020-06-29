@@ -69,6 +69,7 @@ class VOCDataset(torch.utils.data.Dataset):
         else:
             transform = [
                 Resize(img_size),
+                #ToPercentCoords(),
                 SubtractMeans([123, 117, 104]),
                 ToTensor()
             ]
@@ -122,6 +123,10 @@ class VOCDataset(torch.utils.data.Dataset):
             target[i, 4] = w
             target[i, 5] = h
         target = torch.from_numpy(target)
+        if self.split == 'train':
+            return image, target
+        if self.split =='test':
+            return image_id, image
         return image, target
 
     def get_annotation(self, index):
